@@ -1,3 +1,7 @@
+#Check and install missing packages
+if(!require("pacman")) install.packages("pacman")
+pacman::p_load("shiny","highcharter","jsonlite","dplyr")
+
 library(shiny)
 library(highcharter)
 library(jsonlite)

@@ -1,5 +1,4 @@
 library(shiny)
-library(highcharter)
 
 shinyUI(fluidPage(
   h1("BeerSights!",align="center"),

@@ -1,4 +1,6 @@
-library(shiny)
+#Check and install missing packages
+if(!require("pacman")) install.packages("pacman")
+pacman::p_load("shiny","highcharter")
 
 shinyUI(fluidPage(
   h1("BeerSights!",align="center"),

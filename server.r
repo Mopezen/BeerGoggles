@@ -2,11 +2,6 @@
 if(!require("pacman")) install.packages("pacman")
 pacman::p_load("shiny","highcharter","jsonlite","dplyr")
 
-library(shiny)
-library(highcharter)
-library(jsonlite)
-library(dplyr)
-
 shinyServer(function(input,output){
   output$beerChart <- renderHighchart({
       if (input$generateChart == 0)

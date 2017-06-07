@@ -24,25 +24,76 @@ shinyServer(function(input,output){
         totalPages <- 1 #Total number of pages used to update progress
         currentVectorLoc <- 1 #The location of placing values in our attribute vector
         maxPages <- input$maxPages
-        ocb <- ""
+        progressPages <- 1
         
-        if(input$ocb){
-          ocb <- "&where=is_ocb"
+        #Setup user parameters
+        ocb_where <- ""
+        ocb_where_not <- ""
+        seasonal_where <- ""
+        seasonal_where_not <- ""
+        value_where <- ""
+        value_where_not <- ""
+        miles_where <- ""
+        miles_where_not <- ""
+        vqa_where <- ""
+        vqa_where_not <- ""
+        kosher_where <- ""
+        kosher_where_not <- ""
+        user_search_terms <- input$searchInput
+        
+        if(input$ocb == "only"){
+          ocb_where <- "is_ocb,"
+        }else if(input$ocb == "exec"){
+          ocb_where_not <- "is_ocb,"
         }
-      
+        
+        if(input$seasonal == "only"){
+          seasonal_where <- "is_seasonal,"
+        }else if(input$seasonal == "exec"){
+          seasonal_where_not <- "is_seasonal,"
+        }
+        
+        if(input$value == "only"){
+          value_where <- "has_value_added_promotion,"
+        }else if(input$value == "exec"){
+          value_where_not <- "has_value_added_promotion,"
+        }
+        
+        if(input$miles == "only"){
+          miles_where <- "has_bonus_reward_miles,"
+        }else if(input$miles == "exec"){
+          miles_where_not <- "has_bonus_reward_miles,"
+        }
+        
+        if(input$vqa == "only"){
+          vqa_where <- "is_vqa,"
+        }else if(input$vqa == "exec"){
+          vqa_where_not <- "is_vqa,"
+        }
+        
+        if(input$kosher == "only"){
+          kosher_where <- "is_kosher,"
+        }else if(input$vqa == "exec"){
+          kosher_where_not <- "is_kosher,"
+        }
+        
         progress$set(message="Gathering beers from API", value = 0)
         
         #Loop while we aren't on the last page of the API 
         repeat{
           if(curPage != 1){
-            progress$inc(1/totalPages, detail =paste0("Gathering beers from Page ",curPage))
+            progress$inc(1/progressPages, detail =paste0("Gathering beers from Page ",curPage))
           }
           
           #Get pages from the LCBO API & the number of total pages if we're on the first loop
-          beerDF <- fromJSON(paste0("http://lcboapi.com/products?where_not=is_dead,is_discontinued",ocb,"&per_page=100&page=",curPage))
+          beerDF <- fromJSON(paste0("http://lcboapi.com/products?where_not=is_dead,is_discontinued,",ocb_where_not,seasonal_where_not,value_where_not,miles_where_not,vqa_where_not,kosher_where_not,
+                                    "&where=",ocb_where,seasonal_where,value_where,miles_where,vqa_where,kosher_where,
+                                    "&q=",user_search_terms,
+                                    "&per_page=100&page=",curPage))
           
           if(beerDF$pager$is_first_page == TRUE){
             totalPages <- beerDF$pager$total_pages
+            progressPages <- min(totalPages,maxPages)
             
             #Preallocate our vector space for our attribute vectors
             recordCount <- beerDF$pager$total_record_count #Could run an equation to calculate ~ the actual amount of records to be gather
@@ -75,13 +126,13 @@ shinyServer(function(input,output){
           beerList$varietal[currentVectorLoc:(currentVectorLoc +length(beerDF$name) - 1)] <- beerDF$varietal
           beerList$tertiary_category[currentVectorLoc:(currentVectorLoc +length(beerDF$name) - 1)] <- beerDF$tertiary_category
           beerList$style[currentVectorLoc:(currentVectorLoc +length(beerDF$name) - 1)] <- beerDF$style
+
+          currentVectorLoc <- currentVectorLoc + length(beerDF$name)
           
-          
-          if(curPage == totalPages | curPage > maxPages){
+          if(curPage >= totalPages | curPage >= maxPages){
             break
           }
           
-          currentVectorLoc <- currentVectorLoc + length(beerDF$name)
           curPage <- curPage + 1
         }
         

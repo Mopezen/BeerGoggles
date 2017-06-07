@@ -9,15 +9,45 @@ shinyUI(fluidPage(
   ),
   hr(),
   fluidRow(
-    column(4,
+    column(5,
       wellPanel(
-        strong(h3("Controls")),
+        strong(h3("Variable Controls")),
+        textInput("searchInput","Graph by a search term",placeholder = "i.e. Cider or Lager..."),
         sliderInput('maxPages', 'Max Number of Pages',
                     min = 1, max = 10, value = 1, step = 1),
-        checkboxInput('ocb','Show Only Ontario Craft Beers?')
+        radioButtons('ocb','Ontario Craft Beers', c(
+          "Include" = "nopref",
+          "Show Only" = "only",
+          "Exclude" = "exec"
+        ),inline = TRUE),
+        radioButtons('vqa','Vintners Quality Alliance Wines', c(
+          "Include" = "nopref",
+          "Show Only" = "only",
+          "Exclude" = "exec"
+        ),inline = TRUE),
+        radioButtons('kosher','Kosher Product', c(
+          "Include" = "nopref",
+          "Show Only" = "only",
+          "Exclude" = "exec"
+        ),inline = TRUE),
+        radioButtons('seasonal','Seasonal Product', c(
+          "Include" = "nopref",
+          "Show Only" = "only",
+          "Exclude" = "exec"
+        ),inline = TRUE),
+        radioButtons('value','Products with Value Added Items', c(
+          "Include" = "nopref",
+          "Show Only" = "only",
+          "Exclude" = "exec"
+        ),inline = TRUE),
+        radioButtons('miles','Products with Bonus Reward Miles', c(
+          "Include" = "nopref",
+          "Show Only" = "only",
+          "Exclude" = "exec"
+        ),inline = TRUE)
       )
     ),
-    column(8, align = "center",
+    column(7, align = "center",
            fluidRow(
             column(12,align = "center",
               actionButton('generateChart','Generate Chart',style='width: 90%; height: 80%')
@@ -26,7 +56,7 @@ shinyUI(fluidPage(
            fluidRow(
              br(),
              tabsetPanel(
-               tabPanel("Beer Information",
+               tabPanel("Drink Information",
                  column(2,
                         htmlOutput("beerImage")
                  ),
@@ -48,5 +78,10 @@ shinyUI(fluidPage(
                )
              )
          )
+    )
+  ),
+  fluidRow(column(12, align = "center",
+    em(strong(h6("Meshach Jones 2017 ",style='color: #a6a6a6; font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;')))
+    ) 
   )
-)))
+))

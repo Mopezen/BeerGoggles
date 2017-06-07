@@ -11,13 +11,42 @@ shinyUI(fluidPage(
   fluidRow(
     column(4,
       wellPanel(
-        h4("Controls"),
+        strong(h3("Controls")),
         sliderInput('maxPages', 'Max Number of Pages',
                     min = 1, max = 10, value = 1, step = 1),
         checkboxInput('ocb','Show Only Ontario Craft Beers?')
       )
     ),
     column(8, align = "center",
-           actionButton('generateChart','Generate Chart',style='width: 90%; height: 80%'))
+           fluidRow(
+            column(12,align = "center",
+              actionButton('generateChart','Generate Chart',style='width: 90%; height: 80%')
+            )
+           ),
+           fluidRow(
+             br(),
+             tabsetPanel(
+               tabPanel("Beer Information",
+                 column(2,
+                        htmlOutput("beerImage")
+                 ),
+                 column(5,align = "center",
+                        strong(h4("Name")), 
+                        textOutput('beerName'),
+                        strong(h4("Primary Category")),
+                        textOutput('beerPrimaryCategory'),
+                        strong(h4("Secondary Category")),
+                        textOutput('beerSecondaryCategory')
+                 ),column(5, align = "center",
+                        strong(h4("Varietal")),
+                        textOutput('beervarietal'),
+                        strong(h4("Tertiary Category")),
+                        textOutput('beerTertiaryCategory'),
+                        strong(h4("Style")),
+                        textOutput('beerStyle')
+                 )
+               )
+             )
+         )
   )
-))
+)))

@@ -1,8 +1,27 @@
 #Check and install missing packages
 if(!require("pacman")) install.packages("pacman")
-pacman::p_load("shiny","highcharter")
+pacman::p_load("shiny","highcharter","leaflet")
 
 shinyUI(fluidPage(
+  tags$script('
+    $(document).ready(function () {
+      navigator.geolocation.getCurrentPosition(onSuccess, onError);
+              
+      function onError (err) {
+        Shiny.onInputChange("geolocation", false);
+      }
+              
+      function onSuccess (position) {
+        setTimeout(function () {
+          var coords = position.coords;
+          console.log(coords.latitude + ", " + coords.longitude);
+          Shiny.onInputChange("geolocation", true);
+          Shiny.onInputChange("lat", coords.latitude);
+          Shiny.onInputChange("long", coords.longitude);
+        }, 1100)
+      }
+    });
+  '),
   h1("BeerSights!",align="center"),
   fluidRow(
     column(12,highchartOutput("beerChart"))
@@ -75,6 +94,12 @@ shinyUI(fluidPage(
                         strong(h4("Style")),
                         textOutput('beerStyle')
                  )
+               ),
+               tabPanel("Drink Location",
+                column(9,
+                       leafletOutput("lcboLocations")
+                ),
+                column(3,h6("temp"))
                )
              )
          )

@@ -1,6 +1,6 @@
 #Check and install missing packages
 if(!require("pacman")) install.packages("pacman")
-pacman::p_load("shiny","highcharter","jsonlite","dplyr")
+pacman::p_load("shiny","highcharter","jsonlite","dplyr","leaflet")
 
 shinyServer(function(input,output){
   output$beerChart <- renderHighchart({
@@ -10,7 +10,7 @@ shinyServer(function(input,output){
       #Create our JS function to return point values
       pointClickedFunction <- JS("function(event){Shiny.onInputChange('pointClicked',
                          [this.label,this.primary_category,this.secondary_category,
-                         this.varietal,this.tertiary_category,this.style,this.img]);}")
+                         this.varietal,this.tertiary_category,this.style,this.img,this.id]);}")
       
       isolate({
         #Create our progess object
@@ -102,6 +102,7 @@ shinyServer(function(input,output){
             beerList$alcoholamount <- numeric(recordCount)
             beerList$img <- character(recordCount)
             beerList$img_large <- character(recordCount)
+            beerList$id <- numeric(recordCount)
             
             #Description of beer
             beerList$primary_category <- character(recordCount)
@@ -113,7 +114,7 @@ shinyServer(function(input,output){
           
           #Subset the DF to only select the columns we care about
           beerDF <- select(beerDF$result,name,alcohol_content,price_per_liter_of_alcohol_in_cents,image_thumb_url,image_url,
-                           primary_category,secondary_category,varietal,tertiary_category,style)
+                           primary_category,secondary_category,varietal,tertiary_category,style,id)
           
           #Copy the current page into our allocated vectors
           beerList$name[currentVectorLoc:(currentVectorLoc +length(beerDF$name) - 1)] <- beerDF$name
@@ -126,6 +127,7 @@ shinyServer(function(input,output){
           beerList$varietal[currentVectorLoc:(currentVectorLoc +length(beerDF$name) - 1)] <- beerDF$varietal
           beerList$tertiary_category[currentVectorLoc:(currentVectorLoc +length(beerDF$name) - 1)] <- beerDF$tertiary_category
           beerList$style[currentVectorLoc:(currentVectorLoc +length(beerDF$name) - 1)] <- beerDF$style
+          beerList$id[currentVectorLoc:(currentVectorLoc +length(beerDF$name) - 1)] <- beerDF$id
 
           currentVectorLoc <- currentVectorLoc + length(beerDF$name)
           
@@ -141,21 +143,22 @@ shinyServer(function(input,output){
         
         #Reduce vector size to allocated amount
         currentVectorLoc <- currentVectorLoc - 1 #Move inserted number back one
-        beerList$name <- beerList$name[1:currentVectorLoc - 1]
-        beerList$priceperlitre <- beerList$priceperlitre[1:currentVectorLoc - 1]
-        beerList$alcoholamount <- beerList$alcoholamount[1:currentVectorLoc - 1]
-        beerList$img <- beerList$img[1:currentVectorLoc - 1]
-        beerList$img_large <- beerList$img_large[1:currentVectorLoc - 1]
-        beerList$primary_category <- beerList$primary_category[1:currentVectorLoc - 1]
-        beerList$secondary_category <- beerList$secondary_category[1:currentVectorLoc - 1]
-        beerList$varietal <- beerList$varietal[1:currentVectorLoc - 1]
-        beerList$tertiary_category <- beerList$tertiary_category[1:currentVectorLoc - 1]
-        beerList$style <- beerList$style[1:currentVectorLoc - 1] 
+        beerList$name <- beerList$name[1:currentVectorLoc]
+        beerList$priceperlitre <- beerList$priceperlitre[1:currentVectorLoc]
+        beerList$alcoholamount <- beerList$alcoholamount[1:currentVectorLoc]
+        beerList$img <- beerList$img[1:currentVectorLoc]
+        beerList$img_large <- beerList$img_large[1:currentVectorLoc]
+        beerList$primary_category <- beerList$primary_category[1:currentVectorLoc]
+        beerList$secondary_category <- beerList$secondary_category[1:currentVectorLoc]
+        beerList$varietal <- beerList$varietal[1:currentVectorLoc]
+        beerList$tertiary_category <- beerList$tertiary_category[1:currentVectorLoc]
+        beerList$style <- beerList$style[1:currentVectorLoc]
+        beerList$id <- beerList$id[1:currentVectorLoc]
         
         #Replace NAs with N/As
         beerList$name[is.na(beerList$name)] <- "N/A" #Should never be NA but just incase
-        beerList$priceperlitre[is.na(beerList$priceperlitre)] <- 0
-        beerList$alcoholamount[is.na(beerList$alcoholamount)] <- 0
+        beerList$priceperlitre[is.na(beerList$priceperlitre)] <- -1
+        beerList$alcoholamount[is.na(beerList$alcoholamount)] <- -1
         beerList$img[is.na(beerList$img)] <- "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
         beerList$img_large[is.na(beerList$img_large)] <- "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
         beerList$primary_category[is.na(beerList$primary_category)] <- "N/A"
@@ -163,6 +166,7 @@ shinyServer(function(input,output){
         beerList$varietal[is.na(beerList$varietal)] <- "N/A"
         beerList$tertiary_category[is.na(beerList$tertiary_category)] <- "N/A" 
         beerList$style[is.na(beerList$style)] <- "N/A"
+        beerList$id[is.na(beerList$id)] <- -1
         
         #Create a scatter plot graph displaying the price alcoholic content of drinks per litre versus their total content
         hc <- highchart() %>%
@@ -190,7 +194,7 @@ shinyServer(function(input,output){
                                 label = beerList$name, img = beerList$img, img_large = beerList$img_large,
                                 primary_category = beerList$primary_category, secondary_category = beerList$secondary_category,
                                 varietal = beerList$varietal, tertiary_category = beerList$tertiary_category,
-                                style = beerList$style)
+                                style = beerList$style, id = beerList$id)
         
         return(hc)
       })
@@ -204,6 +208,7 @@ shinyServer(function(input,output){
   makeReactiveBinding("beerInfoTertiaryCategory")
   makeReactiveBinding("beerInfoStyle")
   makeReactiveBinding("beerInfoPicture")
+  makeReactiveBinding("beerInfoID")
   
   observeEvent(input$pointClicked,{
     beerInfoName <<- input$pointClicked[1]
@@ -213,6 +218,7 @@ shinyServer(function(input,output){
     beerInfoTertiaryCategory <<- input$pointClicked[5]
     beerInfoStyle <<- input$pointClicked[6]
     beerInfoPicture <<- input$pointClicked[7]
+    beerInfoID <<- input$pointClicked[8]
   })
   
   output$beerName <- renderText({
@@ -241,5 +247,32 @@ shinyServer(function(input,output){
   
   output$beerImage <- renderText({
     c('<img src="',beerInfoPicture,'">')
+  })
+  
+  output$lcboLocations <- renderLeaflet({
+    print("IN LCBO")
+    if(is.null(input$lat) | is.null(input$long)) return()
+    
+    #Create our progess object
+    progress <- shiny::Progress$new()
+    on.exit(progress$close()) #Close progress on exit
+
+    lcboDF <- fromJSON(paste0("http://lcboapi.com/stores?where_not=is_dead&product_id=",beerInfoID,
+                              "&lat=",input$lat,"&lon=",input$long,
+                              "&per_page=100&page=1"))$result
+
+    #Keep all column just incase but rename columns
+    
+    map <- leaflet() %>%
+      addTiles() %>%
+      setView(lat = input$lat,lng = input$long, zoom = 13) %>%
+      addMarkers(lng = lcboDF$longitude, lat = lcboDF$latitude, label = lcboDF$name, popup = 
+                   paste0("<strong>",lcboDF$name,"</strong></br>",
+                          "<p>Number of ", beerInfoName, "(s): ", lcboDF$quantity, "</p><hr>",
+                          "<p>",lcboDF$address_line_1, " ", lcboDF$address_line_2,"</br>",
+                          lcboDF$city, " ", lcboDF$postal_code,"</br>",
+                          "P:",lcboDF$telephone, "F:", lcboDF$fax,"</p>")) %>%
+      addMarkers(lng = input$long, lat = input$lat, label = "Your location")
+    return(map)
   })
 })

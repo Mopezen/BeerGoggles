@@ -3,6 +3,7 @@ if(!require("pacman")) install.packages("pacman")
 pacman::p_load("shiny","highcharter","leaflet","shinycssloaders","shinyjs")
 
 shinyUI(fluidPage(
+  useShinyjs(),
   tags$script('
     $(document).ready(function () {
       navigator.geolocation.getCurrentPosition(onSuccess, onError);
@@ -21,7 +22,6 @@ shinyUI(fluidPage(
       }
     });
   '),
-  useShinyjs(),
   h1("BeerSights!",align="center"),
   fluidRow(
     column(12,withSpinner(highchartOutput("beerChart")))

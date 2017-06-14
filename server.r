@@ -260,18 +260,53 @@ shinyServer(function(input,output){
     lcboDF <- fromJSON(paste0("http://lcboapi.com/stores?where_not=is_dead&product_id=",beerInfoID,
                               "&lat=",input$lat,"&lon=",input$long,
                               "&per_page=100&page=1"))$result
+    
+    changeTime <- function(x){
+      DayTemp <- x
+      DayTempHrs <- DayTemp/60
+      DayTemp24Hrs <- ifelse(DayTempHrs > 12, DayTempHrs - 12, DayTempHrs)
+      DayTempMin <- ifelse(DayTemp %% 60 == 0, "00" , DayTemp %% 60)
+      DayTempM <- ifelse(DayTempHrs > 12,"PM","AM")
+      Day12HR <- ifelse(!is.na(DayTemp),paste0(as.character(DayTemp24Hrs),":",as.character(DayTempMin)," ",DayTempM),"NA")
+      return(Day12HR)
+    }
 
+    lcboDF <- lcboDF %>%
+    mutate(sunday_open_mod = changeTime(sunday_open),
+           sunday_close_mod = changeTime(sunday_close),
+           monday_open_mod = changeTime(monday_open),
+           monday_close_mod = changeTime(monday_close),
+           tuesday_open_mod = changeTime(tuesday_open),
+           tuesday_close_mod = changeTime(tuesday_close),
+           wednesday_open_mod = changeTime(wednesday_open),
+           wednesday_close_mod = changeTime(wednesday_close),
+           thursday_open_mod = changeTime(thursday_open),
+           thursday_close_mod = changeTime(thursday_close),
+           friday_open_mod = changeTime(friday_open),
+           friday_close_mod = changeTime(friday_close),
+           saturday_open_mod = changeTime(saturday_open),
+           saturday_close_mod = changeTime(saturday_close))
     #Keep all column just incase but rename columns
+    
+    numberOfItems <- ifelse(is.null(beerInfoName) | is.na(beerInfoName) | beerInfoName == '',
+                            "", paste0("<strong>",lcboDF$name,"</strong></br>",
+                                       "<p>Number of ", beerInfoName, "(s): ", lcboDF$quantity, "</p><hr>")
+    )
     
     map <- leaflet() %>%
       addTiles() %>%
       setView(lat = input$lat,lng = input$long, zoom = 13) %>%
       addMarkers(lng = lcboDF$longitude, lat = lcboDF$latitude, label = lcboDF$name, popup = 
-                   paste0("<strong>",lcboDF$name,"</strong></br>",
-                          "<p>Number of ", beerInfoName, "(s): ", lcboDF$quantity, "</p><hr>",
-                          "<p>",lcboDF$address_line_1, " ", lcboDF$address_line_2,"</br>",
+                   paste0(numberOfItems,"<p>",lcboDF$address_line_1, " ", ifelse(is.na(lcboDF$address_line_2),"",lcboDF$address_line_2),"</br>",
                           lcboDF$city, " ", lcboDF$postal_code,"</br>",
-                          "P:",lcboDF$telephone, "F:", lcboDF$fax,"</p>")) %>%
+                          "<strong>P:</strong>",lcboDF$telephone, "  <strong>F:</strong>", lcboDF$fax,"</br>", 
+                          "<strong>S:</strong>",lcboDF$sunday_open_mod,"-",lcboDF$sunday_close_mod,"</br>",
+                          "<strong>M:</strong>",lcboDF$monday_open_mod,"-",lcboDF$monday_close_mod,"</br>",
+                          "<strong>T:</strong>",lcboDF$tuesday_open_mod,"-",lcboDF$tuesday_close_mod,"</br>",
+                          "<strong>W:</strong>",lcboDF$wednesday_open_mod,"-",lcboDF$wednesday_close_mod,"</br>",
+                          "<strong>T:</strong>",lcboDF$thursday_open_mod,"-",lcboDF$thursday_close_mod,"</br>",
+                          "<strong>F:</strong>",lcboDF$friday_open_mod,"-",lcboDF$friday_close_mod,"</br>",
+                          "<strong>S:</strong>",lcboDF$saturday_open_mod,"-",lcboDF$saturday_close_mod,"</p>")) %>%
       addMarkers(lng = input$long, lat = input$lat, label = "Your location")
     return(map)
   })

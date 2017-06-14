@@ -1,6 +1,6 @@
 #Check and install missing packages
 if(!require("pacman")) install.packages("pacman")
-pacman::p_load("shiny","highcharter","leaflet")
+pacman::p_load("shiny","highcharter","leaflet","shinycssloaders")
 
 shinyUI(fluidPage(
   tags$script('
@@ -24,7 +24,7 @@ shinyUI(fluidPage(
   '),
   h1("BeerSights!",align="center"),
   fluidRow(
-    column(12,highchartOutput("beerChart"))
+    column(12,withSpinner(highchartOutput("beerChart")))
   ),
   hr(),
   fluidRow(
@@ -77,7 +77,7 @@ shinyUI(fluidPage(
              tabsetPanel(
                tabPanel("Drink Information",
                  column(2,
-                        htmlOutput("beerImage")
+                        withSpinner(htmlOutput("beerImage"))
                  ),
                  column(5,align = "center",
                         strong(h4("Name")), 
@@ -97,7 +97,8 @@ shinyUI(fluidPage(
                ),
                tabPanel("Drink Location",
                 column(9,
-                       leafletOutput("lcboLocations")
+                       br(),
+                       withSpinner(leafletOutput("lcboLocations"))
                 ),
                 column(3,h6("temp"))
                )

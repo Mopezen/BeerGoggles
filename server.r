@@ -1,8 +1,23 @@
 #Check and install missing packages
 if(!require("pacman")) install.packages("pacman")
-pacman::p_load("shiny","highcharter","jsonlite","dplyr","leaflet")
+pacman::p_load("shiny","highcharter","jsonlite","dplyr","leaflet","shinyjs","logging")
+
+#Error logging setup
+options(shiny.error = function() { 
+  logging::logerror(sys.calls() %>% as.character %>% paste(collapse = ", ")) })
 
 shinyServer(function(input,output){
+  #Error logging setup
+  printLogJs <- function(x, ...) {
+    
+    logjs(x)
+    
+    T
+  }
+  
+  addHandler(printLogJs)
+  
+  
   output$beerChart <- renderHighchart({
       if (input$generateChart == 0)
         return()
@@ -251,7 +266,10 @@ shinyServer(function(input,output){
   
   output$lcboLocations <- renderLeaflet({
     print("IN LCBO")
-    if(is.null(input$lat) | is.null(input$long)) return()
+    if(is.null(input$lat) | is.null(input$long)){
+      loginfo("Invalid Lat or Long! Ensure location is enabled")
+      return()
+    }
     
     #Create our progess object
     progress <- shiny::Progress$new()
@@ -292,6 +310,8 @@ shinyServer(function(input,output){
                             "", paste0("<strong>",lcboDF$name,"</strong></br>",
                                        "<p>Number of ", beerInfoName, "(s): ", lcboDF$quantity, "</p><hr>")
     )
+    
+    loginfo("Making LCBO location map")
     
     map <- leaflet() %>%
       addTiles() %>%

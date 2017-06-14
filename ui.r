@@ -1,6 +1,6 @@
 #Check and install missing packages
 if(!require("pacman")) install.packages("pacman")
-pacman::p_load("shiny","highcharter","leaflet","shinycssloaders")
+pacman::p_load("shiny","highcharter","leaflet","shinycssloaders","shinyjs")
 
 shinyUI(fluidPage(
   tags$script('
@@ -14,7 +14,6 @@ shinyUI(fluidPage(
       function onSuccess (position) {
         setTimeout(function () {
           var coords = position.coords;
-          console.log(coords.latitude + ", " + coords.longitude);
           Shiny.onInputChange("geolocation", true);
           Shiny.onInputChange("lat", coords.latitude);
           Shiny.onInputChange("long", coords.longitude);
@@ -22,6 +21,7 @@ shinyUI(fluidPage(
       }
     });
   '),
+  useShinyjs(),
   h1("BeerSights!",align="center"),
   fluidRow(
     column(12,withSpinner(highchartOutput("beerChart")))

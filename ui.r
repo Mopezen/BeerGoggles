@@ -8,7 +8,6 @@ shinyUI(fluidPage(
     $(document).ready(function () {
       navigator.geolocation.getCurrentPosition(onSuccess, onError);
               
-              
       function onSuccess (position) {
         setTimeout(function () {
           var coords = position.coords;
@@ -16,6 +15,10 @@ shinyUI(fluidPage(
           Shiny.onInputChange("lat", coords.latitude);
           Shiny.onInputChange("long", coords.longitude);
         }, 1100)
+      }
+
+      function onError (err) {
+        Shiny.onInputChange("geolocation", false);
       }
     });
   '),

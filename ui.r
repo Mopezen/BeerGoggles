@@ -8,9 +8,6 @@ shinyUI(fluidPage(
     $(document).ready(function () {
       navigator.geolocation.getCurrentPosition(onSuccess, onError);
               
-      function onError (err) {
-        Shiny.onInputChange("geolocation", false);
-      }
               
       function onSuccess (position) {
         setTimeout(function () {

@@ -40,7 +40,7 @@ shinyServer(function(input,output){
         currentVectorLoc <- 1 #The location of placing values in our attribute vector
         maxPages <- input$maxPages
         progressPages <- 1
-        
+      
         #Setup user parameters
         ocb_where <- ""
         ocb_where_not <- ""
@@ -264,6 +264,41 @@ shinyServer(function(input,output){
     c('<img src="',beerInfoPicture,'">')
   })
   
+  getLCBOData <- reactive({
+    lcboDF <- fromJSON(paste0("http://lcboapi.com/stores?where_not=is_dead&product_id=",beerInfoID,
+                              "&lat=",input$lat,"&lon=",input$long,
+                              "&per_page=100&page=1&order=distance_in_meters.asc"))$result
+    
+    changeTime <- function(x){
+      DayTemp <- x
+      DayTempHrs <- DayTemp/60
+      DayTemp24Hrs <- ifelse(DayTempHrs > 12, DayTempHrs - 12, DayTempHrs)
+      DayTempMin <- ifelse(DayTemp %% 60 == 0, "00" , DayTemp %% 60)
+      DayTempM <- ifelse(DayTempHrs > 12,"PM","AM")
+      Day12HR <- ifelse(!is.na(DayTemp),paste0(as.character(DayTemp24Hrs),":",as.character(DayTempMin)," ",DayTempM),"NA")
+      return(Day12HR)
+    }
+    
+    #Keep all column just incase but rename columns
+    lcboDF <- lcboDF %>%
+      mutate(sunday_open_mod = changeTime(sunday_open),
+             sunday_close_mod = changeTime(sunday_close),
+             monday_open_mod = changeTime(monday_open),
+             monday_close_mod = changeTime(monday_close),
+             tuesday_open_mod = changeTime(tuesday_open),
+             tuesday_close_mod = changeTime(tuesday_close),
+             wednesday_open_mod = changeTime(wednesday_open),
+             wednesday_close_mod = changeTime(wednesday_close),
+             thursday_open_mod = changeTime(thursday_open),
+             thursday_close_mod = changeTime(thursday_close),
+             friday_open_mod = changeTime(friday_open),
+             friday_close_mod = changeTime(friday_close),
+             saturday_open_mod = changeTime(saturday_open),
+             saturday_close_mod = changeTime(saturday_close))
+    
+    return(lcboDF)
+  })
+  
   output$lcboLocations <- renderLeaflet({
     print("IN LCBO")
     if(is.null(input$lat) | is.null(input$long)){
@@ -275,36 +310,7 @@ shinyServer(function(input,output){
     progress <- shiny::Progress$new()
     on.exit(progress$close()) #Close progress on exit
 
-    lcboDF <- fromJSON(paste0("http://lcboapi.com/stores?where_not=is_dead&product_id=",beerInfoID,
-                              "&lat=",input$lat,"&lon=",input$long,
-                              "&per_page=100&page=1"))$result
-    
-    changeTime <- function(x){
-      DayTemp <- x
-      DayTempHrs <- DayTemp/60
-      DayTemp24Hrs <- ifelse(DayTempHrs > 12, DayTempHrs - 12, DayTempHrs)
-      DayTempMin <- ifelse(DayTemp %% 60 == 0, "00" , DayTemp %% 60)
-      DayTempM <- ifelse(DayTempHrs > 12,"PM","AM")
-      Day12HR <- ifelse(!is.na(DayTemp),paste0(as.character(DayTemp24Hrs),":",as.character(DayTempMin)," ",DayTempM),"NA")
-      return(Day12HR)
-    }
-
-    lcboDF <- lcboDF %>%
-    mutate(sunday_open_mod = changeTime(sunday_open),
-           sunday_close_mod = changeTime(sunday_close),
-           monday_open_mod = changeTime(monday_open),
-           monday_close_mod = changeTime(monday_close),
-           tuesday_open_mod = changeTime(tuesday_open),
-           tuesday_close_mod = changeTime(tuesday_close),
-           wednesday_open_mod = changeTime(wednesday_open),
-           wednesday_close_mod = changeTime(wednesday_close),
-           thursday_open_mod = changeTime(thursday_open),
-           thursday_close_mod = changeTime(thursday_close),
-           friday_open_mod = changeTime(friday_open),
-           friday_close_mod = changeTime(friday_close),
-           saturday_open_mod = changeTime(saturday_open),
-           saturday_close_mod = changeTime(saturday_close))
-    #Keep all column just incase but rename columns
+    lcboDF <- getLCBOData()
     
     numberOfItems <- ifelse(is.null(beerInfoName) | is.na(beerInfoName) | beerInfoName == '',
                             "", paste0("<strong>",lcboDF$name,"</strong></br>",
@@ -329,5 +335,39 @@ shinyServer(function(input,output){
                           "<strong>S:</strong>",lcboDF$saturday_open_mod,"-",lcboDF$saturday_close_mod,"</p>")) %>%
       addMarkers(lng = input$long, lat = input$lat, label = "Your location")
     return(map)
+  })
+  
+  output$mapTable <- renderUI({
+    if(is.null(input$lat) | is.null(input$long)){
+      loginfo("Invalid Lat or Long! Ensure location is enabled")
+      return()
+    }
+    
+    tableStart <- "<table>"
+    tableEnd <- "</table>"
+    
+    
+    lcboDF <- getLCBOData()
+    
+    numberOfItems <- ifelse(is.null(beerInfoName) | is.na(beerInfoName) | beerInfoName == '',
+                            "", paste0("<strong>",lcboDF$name,"</strong></br>",
+                                       "<p>Number of ", beerInfoName, "(s): ", lcboDF$quantity, "</p><hr>")
+    )
+    
+    tableCreator <- function(name,distance,address,tele){
+      tableRow <- paste0("<tr><td>",name, " ",distance, "m</td>",
+                         ifelse(numberOfItems != "",paste0("<td>",numberofItems, " ", beerInfoName, " available at location.</td>"),""),
+                         "<td>",address," ",tele,"</td></tr>")
+      
+      return(tableRow)
+    }
+    
+    lcboDF <- lcboDF %>%
+      rowwise() %>%
+      mutate(tableRow = tableCreator(name,distance_in_meters,address_line_1,telephone))
+    
+    print(lcboDF$tableRow)
+    
+    return(HTML(paste0(tableStart,lcboDF$tableRow,tableEnd)))
   })
 })
